@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabaseClient';
+/* import { supabase } from '@/lib/supabaseClient';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -60,4 +60,30 @@ export async function DELETE(req: Request) {
   if (note.count === 0) return new Response("Note not found", { status: 404 });
 
   return new Response(JSON.stringify({ message: "Note deleted" }), { status: 200 });
+}
+
+*/
+
+import { NextResponse } from "next/server";
+import { prisma } from '@/lib/prisma';
+import { createSupabaseServerClient } from '@/lib/supabaseServer';
+
+export async function GET() {
+  const supabase = await createSupabaseServerClient();
+
+  const{data: {session},} = await supabase.auth.getSession();
+
+  if (!session){
+    return NextResponse.json(
+      {error: 'Unauthorized'},
+      {status: 401}
+    );
+  }
+
+  const notes = await prisma.note.findMany({
+    where: {userId: session.user.id},
+    orderBy: {createdAt: 'desc'},
+  });
+
+  return NextResponse.json(notes);
 }
